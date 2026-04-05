@@ -16,4 +16,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push --force https://sankalptiwari629-tech:$HF_TOKEN@huggingface.co/spaces/sankalptiwari629-tech/warehouse-bot-env main
+         git push --force https://sankalptiwari629-tech:$HF_TOKEN@huggingface.co/spaces/sankalptiwari629-tech/warehouse-bot-env main
