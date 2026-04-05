@@ -16,4 +16,5 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.SYNCFIX }}
         run: |
-          git push --force https://sankalptiwari629-tech:$HF_TOKEN@huggingface.co/spaces/sankalptiwari629-tech/warehouse-bot-env main
+          git remote add space https://sankalptiwari629-tech:$HF_TOKEN@huggingface.co/spaces/sankalptiwari629-tech/warehouse-bot-env || true
+          git push space main --force
