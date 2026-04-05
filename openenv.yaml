@@ -1,0 +1,177 @@
+name: warehouse-bot-env
+description: >
+  Deterministic warehouse picking optimisation environment for evaluating
+  route-efficiency policies in logistics operations. An agent navigates a
+  grid warehouse, collects all items, and is scored on how closely its step
+  count matches the BFS-optimal route.
+
+tasks:
+  - id: easy
+    name: Easy
+    description: >
+      Collect three items in a fixed 5×5 warehouse with no obstacles.
+      The greedy nearest-first order is also the optimal order, so a
+      perfect agent scores 1.0.
+  - id: medium
+    name: Medium
+    description: >
+      Collect four items in a fixed 6×6 warehouse with a two-cell wall that
+      blocks the naive direct path. An agent that picks targets by Manhattan
+      distance will be lured into a costly detour; the optimal order avoids
+      backtracking and scores ≈ 0.889 against the baseline planner.
+  - id: hard
+    name: Hard
+    description: >
+      Collect five items in a fixed 7×7 warehouse with a static four-cell
+      wall and a dynamic event: at step 4 the low crossing closes, forcing
+      any agent that has not yet crossed to take a longer detour. The nearest
+      item by Manhattan distance is behind the wall — an agent that chases it
+      first pays a heavy penalty. Optimal score ≈ 0.833.
+
+action_schema:
+  type: object
+  properties:
+    action:
+      type: string
+      enum:
+        - up
+        - down
+        - left
+        - right
+  required:
+    - action
+
+observation_schema:
+  type: object
+  properties:
+    grid_size:
+      type: integer
+      description: Side length of the square grid.
+    agent_position:
+      type: object
+      properties:
+        row:
+          type: integer
+        col:
+          type: integer
+      required:
+        - row
+        - col
+    item_positions:
+      type: array
+      description: Positions of items not yet collected.
+      items:
+        type: object
+        properties:
+          row:
+            type: integer
+          col:
+            type: integer
+        required:
+          - row
+          - col
+    picked_items:
+      type: array
+      description: Positions of items already collected this episode.
+      items:
+        type: object
+        properties:
+          row:
+            type: integer
+          col:
+            type: integer
+        required:
+          - row
+          - col
+    obstacles:
+      type: array
+      description: Impassable cells (static + any dynamic obstacles triggered so far).
+      items:
+        type: object
+        properties:
+          row:
+            type: integer
+          col:
+            type: integer
+        required:
+          - row
+          - col
+    step_count:
+      type: integer
+      description: Number of steps taken so far in this episode.
+    task_id:
+      type: string
+      description: Identifier of the active task.
+    done:
+      type: boolean
+      description: True when all items are collected or max_steps is reached.
+    total_items:
+      type: integer
+      description: Total number of items to collect in this episode.
+    available_actions:
+      type: array
+      description: Always the full set of movement actions.
+      items:
+        type: string
+        enum:
+          - up
+          - down
+          - left
+          - right
+  required:
+    - grid_size
+    - agent_position
+    - item_positions
+    - picked_items
+    - obstacles
+    - step_count
+    - task_id
+    - done
+    - total_items
+
+reward_schema:
+  type: object
+  description: >
+    Returned by step(). Provides dense per-step feedback.
+    reward components:
+      -1   every step (encourages efficiency)
+      +50  on item collection
+      -10  on invalid move (wall or out-of-bounds)
+  properties:
+    reward:
+      type: number
+      description: Scalar reward for this step.
+    done:
+      type: boolean
+      description: Whether the episode has ended.
+    observation:
+      description: Updated observation after the action.
+      $ref: "#/observation_schema"
+    info:
+      type: object
+      properties:
+        invalid_move:
+          type: boolean
+        item_collected:
+          type: boolean
+        collected_items:
+          type: integer
+        total_items:
+          type: integer
+        early_finish_bonus:
+          type: number
+        task_complete:
+          type: boolean
+        dynamic_event_triggered:
+          type: boolean
+      required:
+        - invalid_move
+        - item_collected
+        - collected_items
+        - total_items
+        - task_complete
+  required:
+    - reward
+    - done
+    - observation
+    - info
